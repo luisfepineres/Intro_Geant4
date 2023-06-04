@@ -1,6 +1,4 @@
-
-// Geant4 Libraries
-//
+// Geant4 Libraries , Local Libraries and C++ Libraries
 #include "G4VPhysicalVolume.hh"
 #include "G4LogicalVolume.hh"
 #include "G4Track.hh"
@@ -12,28 +10,20 @@
 #include "G4ParticleDefinition.hh"
 #include "g4root.hh"
 #include "G4SystemOfUnits.hh"
-
-
-// Local Libraries
-//
 #include "SiPMSD.hh"
 #include "SiPMHit.hh"
 #include "DetectorConstruction.hh"
-//#include "UserTrackInformation.hh"
-
-
-// C++ Libraries
-//
-/*#include <locale>
+#include "UserTrackInformation.hh"
+#include <locale>
 #include <string>
 #include <sstream>
-#include <iomanip>*/
-
+#include <iomanip>
 
 SiPMSD::SiPMSD()
   : phoHit(),
   pulseNumber(6),
   phoDetec(0.)
+    
 //  : G4VSensitiveDetector(name),
 {
   G4cout << "...SiPMSD..." << G4endl;
@@ -42,10 +32,8 @@ SiPMSD::SiPMSD()
   phoDetec = 0;
 }
 
-
 SiPMSD::~SiPMSD()
 {}
-
 
 G4int SiPMSD::ProcessHits(const G4Step* step, G4double time)
 {
@@ -53,12 +41,9 @@ G4int SiPMSD::ProcessHits(const G4Step* step, G4double time)
   phoDetec = phoHit->askDetected(kinEnergy);
 
   if (phoDetec)
-
     doPulse(time);//step->GetTrack(), time);
-
   return phoDetec;
 }
-
 
 void SiPMSD::resetSiPMSD()
 {
@@ -66,12 +51,10 @@ void SiPMSD::resetSiPMSD()
   kinEnergy = 0.;
 }
 
-
 void SiPMSD::doPulse(G4double time)//const G4Track* track, G4double time)
 {
   G4AnalysisManager* analysisManager 
-    = G4AnalysisManager::Instance();
- 
+    = G4AnalysisManager::Instance(); 
   analysisManager->FillH1(0,(time/(1.*ns)));
   pulseNumber++;
 }
