@@ -104,11 +104,12 @@ void DetectorConstruction::DefineMaterials()
   const G4double maxEnergy = 3.47 * eV;
   const G4double energyStep = 0.03 * eV;
   const size_t numEnergyBins = static_cast<size_t>((maxEnergy - minEnergy) / energyStep) + 1;
-  const G4int nEntries = sizeof(photonEnergy)/sizeof(G4double);
-  
+	 
   G4double photonEnergy[numEnergyBins];
+  const G4int nEntries = sizeof(photonEnergy)/sizeof(G4double);
+   G4double value_energy = 0;  
   for (size_t i = 0; i < numEnergyBins; ++i){ 
-	  G4double value_energy =  minEnergy + i * energyStep
+	  value_energy =  minEnergy + i * energyStep;
 	  photonEnergy[i] = value_energy * eV;
   }
   //-----------------------------------------------------------------------------------------
