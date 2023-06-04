@@ -1,3 +1,4 @@
+// Geant4 and Local Libraries
 #include "G4Material.hh"
 #include "G4Element.hh"
 #include "G4LogicalBorderSurface.hh"
@@ -14,137 +15,81 @@
 #include "G4NistManager.hh"
 #include "G4UnitsTable.hh"
 #include "G4PhysicalConstants.hh"
-
-// Local Libraries
 #include "DetectorConstruction.hh"
 #include "SiPMSD.hh"
-
-
 
 DetectorConstruction::DetectorConstruction()
  : G4VUserDetectorConstruction()
 {
-  G4cout << "...DetectorConstruction..." << G4endl;
-
+  G4cout << "... Starting the DetectorConstruction..." << G4endl;
   fBarLength        = 600.0*mm; 
   fBarBase          = 5.0*mm; 
   fHoleRadius       = 0.9*mm;
   fHoleLength       = 599.75*mm;
   fCoatingThickness = 0.25*mm;
   fSurfaceRoughness = 1; 
-
   fExtrusionPolish = 1.; 
   fExtrusionReflectivity = 1.; 		
- 
   fXYRatio = 1.0; 
-
   fWLSfiberZ     = fHoleLength-2.5*mm; 
   fWLSfiberRY  = 0.5*mm;
   fWLSfiberOrigin = -2.5*mm; 
- 
   fWLSfiberRX  = fXYRatio * fWLSfiberRY;
-
   fClad1RX = fWLSfiberRX + 0.03*fWLSfiberRX;
   fClad1RY = fWLSfiberRY + 0.03*fWLSfiberRY;
   fClad1Z  = fWLSfiberZ;
-
   fClad2RX = fClad1RX + 0.03*fWLSfiberRX;
   fClad2RY = fClad1RY + 0.03*fWLSfiberRY;
   fClad2Z  = fWLSfiberZ;
-  
   fWorldSizeX = 150.0*cm;
   fWorldSizeY = 150.*cm;
   fWorldSizeZ = 150.*cm;
-  
   O = H = C = Ti = NULL;
-
- TiO2  = Pethylene = FPethylene = Polystyrene = PMMA = NULL;
-
- SetCouple = true;
-
+  TiO2  = Pethylene = FPethylene = Polystyrene = PMMA = NULL;
+  SetCouple = true;
 }
-
 
 DetectorConstruction::~DetectorConstruction()
 {}
 
-
-// ****************************
-// Doing Elements and Materials
-// ****************************
-
+// **************************** Doing Elements and Materials ****************************
 void DetectorConstruction::DefineMaterials()
 {
-
-  // ----------------
-  // *** Elements ***
-  // ----------------
+  // ---------------- *** Elements *** --------------------------
   G4double a, z, density, fractionmass;
-
   //N = new G4Element("Nitrogen", "N", z = 7 , a = 14.01*g/mole);
   C = new G4Element("Carbon"  , "C", z = 6 , a = 12.01*g/mole);
   O = new G4Element("Oxygen"  , "O", z = 8 , a = 16.00*g/mole);
   H = new G4Element("Hydrogen", "H", z=1 , a = 1.01*g/mole);
   Ti = new G4Element("Titanium", "Ti", z=22 , a = 47.867*g/mole);
-
-
-  // -----------------
-  // *** Materials ***
-  // -----------------
+  // ----------------- *** Materials *** ------------------------
   G4NistManager* nist = G4NistManager::Instance();
-  
-
   // *** Air ***
   Air = nist->FindOrBuildMaterial("G4_AIR");
-  
   // *** Aluminio ***
   Aluminio = nist->FindOrBuildMaterial("G4_Al");
-  
-
-  //--------------------------------------------------
-  // WLSfiber PMMA
-  //--------------------------------------------------
+  //----------------------- **** WLSfiber PMMA ***  -------------
   PMMA = new G4Material("PMMA", density= 1.190*g/cm3, 3);
   PMMA->AddElement(C, 5);
   PMMA->AddElement(H, 8);
   PMMA->AddElement(O, 2);
-
-
-  //--------------------------------------------------
-  // Cladding (polyethylene)
-  //--------------------------------------------------
+  //---------------------- Cladding (polyethylene ) --------------
   Pethylene= new G4Material("Pethylene", density= 1.200*g/cm3, 2);
   Pethylene->AddElement(C, 2);
   Pethylene->AddElement(H, 4);
-
-
-  //--------------------------------------------------
-  // Double Cladding (fluorinated polyethylene) 
-  //--------------------------------------------------
+  //-------------------- Double Cladding (fluorinated polyethylene) ---------
   FPethylene= new G4Material("FPethylene", density= 1.400*g/cm3, 2);
   FPethylene->AddElement(C, 2);
   FPethylene->AddElement(H, 4);
-
-
-  //--------------------------------------------------
-  // Polystyrene Material base del centellador
-  //--------------------------------------------------
+  //----------------- Polystyrene Material base del centellador ------------
   Polystyrene = new G4Material("Polystyrene", density= 1.050*g/cm3, 2);
   Polystyrene->AddElement(C, 8);
   Polystyrene->AddElement(H, 8);
-
-
-  //--------------------------------------------------
-  // TiO2 
-  //--------------------------------------------------
+  //------------- TiO2 -----------------------
   TiO2 = new G4Material("TiO2", density= 4.26*g/cm3, 2);
   TiO2->AddElement(Ti, 1);
   TiO2->AddElement(O, 2);
-
-
-  //--------------------------------------------------
-  // Scintillator Coating 
-  //--------------------------------------------------
+  //---------------Scintillator Coating  -----------------------
   Coating = new G4Material("Coating", density = 1.52*g/cm3, 2);
   Coating->AddMaterial(TiO2, fractionmass = 15.0*perCent);
   Coating->AddMaterial(Polystyrene, fractionmass = 85.0*perCent);
@@ -152,60 +97,49 @@ void DetectorConstruction::DefineMaterials()
  
   // *** Optical Propierties ***
 
-  // ------------ Generate & Add Material Properties Table ------------
-
-  G4double photonEnergy[] =
-  {2.00*eV,2.03*eV,2.06*eV,2.09*eV,2.12*eV,
-   2.15*eV,2.18*eV,2.21*eV,2.24*eV,2.27*eV,
-   2.30*eV,2.33*eV,2.36*eV,2.39*eV,2.42*eV,
-   2.45*eV,2.48*eV,2.51*eV,2.54*eV,2.57*eV,
-   2.60*eV,2.63*eV,2.66*eV,2.69*eV,2.72*eV,
-   2.75*eV,2.78*eV,2.81*eV,2.84*eV,2.87*eV,
-   2.90*eV,2.93*eV,2.96*eV,2.99*eV,3.02*eV,
-   3.05*eV,3.08*eV,3.11*eV,3.14*eV,3.17*eV,
-   3.20*eV,3.23*eV,3.26*eV,3.29*eV,3.32*eV,
-   3.35*eV,3.38*eV,3.41*eV,3.44*eV,3.47*eV};
-
+  // ------------ Generate & Add Material Properties Table ------------	
+	
+  // -------------------- Photon Energy ---------------------------------
+  const G4double minEnergy = 2.00 * eV;
+  const G4double maxEnergy = 3.47 * eV;
+  const G4double energyStep = 0.03 * eV;
+  const size_t numEnergyBins = static_cast<size_t>((maxEnergy - minEnergy) / energyStep) + 1;
   const G4int nEntries = sizeof(photonEnergy)/sizeof(G4double);
-
-  //--------------------------------------------------
-  // Air
-  //--------------------------------------------------
-  G4double refractiveIndex[] =
-  { 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
-    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
-    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
-    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
-    1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00};
-
-  assert(sizeof(refractiveIndex) == sizeof(photonEnergy));
-
+  
+  G4double photonEnergy[numEnergyBins];
+  for (size_t i = 0; i < numEnergyBins; ++i){ 
+	  G4double value_energy =  minEnergy + i * energyStep
+	  photonEnergy[i] = value_energy * eV;
+  }
+  //-----------------------------------------------------------------------------------------
+	
+  //----------------- AIR : RefractiveIndex  ------------------------
+  G4double refractiveIndex[numEnergyBins] = {1.00};
+  assert(sizeof(refractiveIndex) == sizeof(photonEnergy)); // Tamaño del arreglo refractiveIndex sea igual al tamaño del arreglo photonEnergy
+  //static_assert(sizeof(refractiveIndex) == sizeof(photonEnergy), "Tamaño de arreglo incorrecto");
   G4MaterialPropertiesTable* mpt = new G4MaterialPropertiesTable();
   mpt->AddProperty("RINDEX", photonEnergy, refractiveIndex, nEntries);
-
   Air->SetMaterialPropertiesTable(mpt);
+  //-----------------------------------------------------------------------------------------
 
-
-  //--------------------------------------------------
-  //  PMMA for WLSfibers
-  //--------------------------------------------------
-  G4double refractiveIndexWLSfiber[] =
-  { 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
-    1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
-    1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
-    1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60,
-    1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60, 1.60};
-
-  assert(sizeof(refractiveIndexWLSfiber) == sizeof(photonEnergy));
-
-  G4double absWLSfiber[] =
-  {5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,
-   5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,
-   5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,5.40*m,1.10*m,
-   1.10*m,1.10*m,1.10*m,1.10*m,1.10*m,1.10*m, 1.*mm, 1.*mm, 1.*mm, 1.*mm,
-    1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm, 1.*mm};
-
-  assert(sizeof(absWLSfiber) == sizeof(photonEnergy));
+  //----------------- PMMA for WLSfibers -------------------------------
+  G4double refractiveIndexWLSfiber[numEnergyBins] =  {1.60};
+  //assert(sizeof(refractiveIndexWLSfiber) == sizeof(photonEnergy));
+ 
+  const G4double longAbsLength = 5.40 * m;
+  const G4double shortAbsLength = 1.10 * m;
+  const G4double mmAbsLength = 1.0 * mm;
+  G4double absWLSfiber[numEnergyBins];
+  for (G4int i = 0; i < numEnergyBins; i++) {
+  	if (i < 30) {
+    	absWLSfiber[i] = longAbsLength;
+  	} else if (i < 36) {
+    	absWLSfiber[i] = shortAbsLength;
+  	} else {
+    	absWLSfiber[i] = mmAbsLength;
+  	}
+   }
+  //assert(sizeof(absWLSfiber) == sizeof(photonEnergy));
 
   G4double emissionFib[] =
   {0.05, 0.10, 0.30, 0.50, 0.75, 1.00, 1.50, 1.85, 2.30, 2.75,
@@ -213,8 +147,7 @@ void DetectorConstruction::DefineMaterials()
    12.9, 13.0, 12.8, 12.3, 11.1, 11.0, 12.0, 11.0, 17.0, 16.9,
    15.0, 9.00, 2.50, 1.00, 0.05, 0.00, 0.00, 0.00, 0.00, 0.00,
    0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00};
-
-  assert(sizeof(emissionFib) == sizeof(photonEnergy));
+   assert(sizeof(emissionFib) == sizeof(photonEnergy));
 
   // Add entries into properties table
   G4MaterialPropertiesTable* mptWLSfiber = new G4MaterialPropertiesTable();
@@ -224,28 +157,13 @@ void DetectorConstruction::DefineMaterials()
   mptWLSfiber->AddConstProperty("WLSTIMECONSTANT", 0.5*ns);
 
   PMMA->SetMaterialPropertiesTable(mptWLSfiber);
-
-
   //--------------------------------------------------
-  //  Polyethylene
-  //--------------------------------------------------
-  G4double refractiveIndexClad1[] =
-  { 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49,
-    1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49,
-    1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49,
-    1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49,
-    1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49, 1.49};
-
-  assert(sizeof(refractiveIndexClad1) == sizeof(photonEnergy));
-
-  G4double absClad[] =
-  {20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,
-   20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,
-   20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,
-   20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,
-   20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m,20.0*m};
-
-  assert(sizeof(absClad) == sizeof(photonEnergy));
+	
+  //------------- Polyethylene -----------------------------------
+  G4double refractiveIndexClad1[numEnergyBins] =  {1.49};
+  //assert(sizeof(refractiveIndexClad1) == sizeof(photonEnergy));
+  G4double absClad[numEnergyBins] ={20.0*m};
+  //assert(sizeof(absClad) == sizeof(photonEnergy));
 
   // Add entries into properties table
   G4MaterialPropertiesTable* mptClad1 = new G4MaterialPropertiesTable();
@@ -253,19 +171,9 @@ void DetectorConstruction::DefineMaterials()
   mptClad1->AddProperty("ABSLENGTH",photonEnergy,absClad,nEntries);
 
   Pethylene->SetMaterialPropertiesTable(mptClad1);
-
-
-  //--------------------------------------------------
-  // Fluorinated Polyethylene
-  //--------------------------------------------------
-   G4double refractiveIndexClad2[] =
-   { 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42,
-     1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42,
-     1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42,
-     1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42,
-     1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42, 1.42};
-
-   assert(sizeof(refractiveIndexClad2) == sizeof(photonEnergy));
+  //--------------- Fluorinated Polyethylene ----------------------------
+  G4double refractiveIndexClad2[numEnergyBins] = {1.42};
+  //assert(sizeof(refractiveIndexClad2) == sizeof(photonEnergy));
 
   // Add entries into properties table
   G4MaterialPropertiesTable* mptClad2 = new G4MaterialPropertiesTable();
@@ -273,37 +181,25 @@ void DetectorConstruction::DefineMaterials()
   mptClad2->AddProperty("ABSLENGTH",photonEnergy,absClad,nEntries);
 
   FPethylene->SetMaterialPropertiesTable(mptClad2);
-
-
-  //--------------------------------------------------
-  //  Polystyrene
-  //--------------------------------------------------
-  G4double refractiveIndexPS[] =
-  { 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50,
-    1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50,
-    1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50,
-    1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50,
-    1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50, 1.50};
-
+  //--------------- Polystyrene ----------------------------------
+  G4double refractiveIndexPS[numEnergyBins] = {1.50};
   assert(sizeof(refractiveIndexPS) == sizeof(photonEnergy));
-G4double factor_absPS = 2.75;
-  G4double absPS[] =
-  {factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,
-   factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,
-   factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,
-   factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,
-   factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm,factor_absPS*2.*cm};
-
+  G4double factor_absPS = 2.75;
+  G4double absPS[numEnergyBins];
+  for (G4int i = 0; i < numEnergyBins; ++i) {
+    absPS[i] = factor_absPS * 2.0 * cm;
+  }
   assert(sizeof(absPS) == sizeof(photonEnergy));
 
-  G4double scintilFast[] =
-  {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-   0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-   0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-   1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-   1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-
-  assert(sizeof(scintilFast) == sizeof(photonEnergy));
+  G4double scintilFast[numEnergyBins];
+  for (G4int i = 0; i < numEnergyBins; i++) {
+     if (i < 30) {
+        scintilFast[i] = 0.0;
+     } else {
+        scintilFast[i] = 1.0;
+       }
+   }
+   assert(sizeof(scintilFast) == sizeof(photonEnergy));
 
   // Add entries into properties table
   G4MaterialPropertiesTable* mptPolystyrene = new G4MaterialPropertiesTable();
@@ -318,9 +214,8 @@ G4double factor_absPS = 2.75;
 
   // Set the Birks Constant for the Polystyrene scintillator
   Polystyrene->GetIonisation()->SetBirksConstant(0.126*mm/MeV);
-
-}
-  
+ }
+ //********************************************************************
 
 // *************************
 // Mechanical Detector
@@ -336,14 +231,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
   G4bool checkOverlaps = true;
 
-
   //-----------------
   // World (air)
   //-----------------
   G4VSolid* solidWorld = new G4Box("World", fWorldSizeX, fWorldSizeY, fWorldSizeZ);
-
   fLogicWorld = new G4LogicalVolume(solidWorld, Air, "World");
-
   fPhysiWorld = new G4PVPlacement(0,
                                   G4ThreeVector(),
                                   fLogicWorld,
@@ -351,7 +243,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                                   0,
                                   false,
                                   0, checkOverlaps);
-
   //--------------------
   // Extrusion (TiO2)
   //--------------------
@@ -392,11 +283,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                     fLogicWorld,
                     false,
                     0, checkOverlaps);
-
-
   new G4LogicalSkinSurface("TiO2Surface",logicExtrusion1,TiO2Surface);
- 
-
   //--------------------------------------------------
   // Scintillator (Polystyrene)
   //--------------------------------------------------
